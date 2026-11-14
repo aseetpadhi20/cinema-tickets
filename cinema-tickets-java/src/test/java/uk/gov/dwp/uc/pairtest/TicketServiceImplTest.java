@@ -19,8 +19,12 @@ import java.util.List;
 import uk.gov.dwp.uc.pairtest.exception.InvalidPurchaseException;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.mockito.InOrder;
+
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class TicketServiceImplTest {
@@ -139,6 +143,15 @@ class TicketServiceImplTest {
     void equalInfantsAndAdultsIsAllowed() {
         service.purchaseTickets(1L, req(Type.ADULT, 2), req(Type.INFANT, 2));
         verify(paymentService).makePayment(1L, 50);
+    }
+
+    @Test
+    void paymentIsTakenBeforeSeatsAreReserved() {
+        service.purchaseTickets(1L, req(Type.ADULT, 1));
+        InOrder inOrder = inOrder(paymentService, seatReservationService);
+        inOrder.verify(paymentService).makePayment(1L, 25);
+        inOrder.verify(seatReservationService).reserveSeat(1L, 1);
+        verifyNoMoreInteractions(paymentService, seatReservationService);
     }
 
     @ParameterizedTest(name = "{0} adult, {1} child, {2} infant -> £{3}, {4} seats")
