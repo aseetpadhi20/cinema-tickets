@@ -21,10 +21,8 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     public void purchaseTickets(Long accountId, TicketTypeRequest... ticketTypeRequests) throws InvalidPurchaseException {
-        int[] counts = new int[Type.values().length];
-        for (TicketTypeRequest request : ticketTypeRequests) {
-            counts[request.getTicketType().ordinal()] += request.getNoOfTickets();
-        }
+        validateAccount(accountId);
+        int[] counts = countTickets(ticketTypeRequests);
 
         int amount = 0;
         int seats = 0;
@@ -38,6 +36,29 @@ public class TicketServiceImpl implements TicketService {
 
         paymentService.makePayment(accountId, amount);
         seatReservationService.reserveSeat(accountId, seats);
+    }
+
+    private void validateAccount(Long accountId) {
+        if (accountId == null || accountId <= 0) {
+            throw new InvalidPurchaseException("Account id must be greater than zero");
+        }
+    }
+
+    private int[] countTickets(TicketTypeRequest[] requests) {
+        if (requests == null || requests.length == 0) {
+            throw new InvalidPurchaseException("At least one ticket request is required");
+        }
+        int[] counts = new int[Type.values().length];
+        for (TicketTypeRequest request : requests) {
+            if (request == null || request.getTicketType() == null) {
+                throw new InvalidPurchaseException("Ticket request and type must not be null");
+            }
+            if (request.getNoOfTickets() <= 0) {
+                throw new InvalidPurchaseException("Number of tickets must be greater than zero");
+            }
+            counts[request.getTicketType().ordinal()] += request.getNoOfTickets();
+        }
+        return counts;
     }
 
 }
