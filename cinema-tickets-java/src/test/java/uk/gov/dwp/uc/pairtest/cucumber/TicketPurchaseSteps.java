@@ -15,11 +15,15 @@ import uk.gov.dwp.uc.pairtest.TicketServiceImpl;
 import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest;
 import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest.Type;
 import uk.gov.dwp.uc.pairtest.exception.InvalidPurchaseException;
+import uk.gov.dwp.uc.pairtest.exception.PurchaseRejectionReason;
+import uk.gov.dwp.uc.pairtest.exception.RejectedPurchaseException;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.AdditionalAnswers.delegatesTo;
@@ -79,9 +83,11 @@ public class TicketPurchaseSteps {
         assertNull(rejection, "purchase should have been accepted");
     }
 
-    @Then("the purchase is rejected")
-    public void thePurchaseIsRejected() {
+    @Then("the purchase is rejected with reason {word}")
+    public void thePurchaseIsRejectedWithReason(String reason) {
         assertNotNull(rejection, "purchase should have been rejected");
+        assertInstanceOf(RejectedPurchaseException.class, rejection);
+        assertEquals(PurchaseRejectionReason.valueOf(reason), ((RejectedPurchaseException) rejection).getReason());
     }
 
     @Then("the customer pays £{int}")

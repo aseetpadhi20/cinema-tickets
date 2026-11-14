@@ -37,7 +37,7 @@ Feature: Purchasing cinema tickets
   Scenario Outline: More than 25 tickets cannot be bought
     Given a customer with account id 10
     When the customer buys <adults> adult, <children> child and <infants> infant tickets
-    Then the purchase is rejected
+    Then the purchase is rejected with reason TOO_MANY_TICKETS
     And nothing is paid and no seats are reserved
 
     Examples:
@@ -52,13 +52,13 @@ Feature: Purchasing cinema tickets
       | type  | quantity |
       | ADULT | 13       |
       | ADULT | 13       |
-    Then the purchase is rejected
+    Then the purchase is rejected with reason TOO_MANY_TICKETS
     And nothing is paid and no seats are reserved
 
   Scenario Outline: Child and infant tickets need an adult ticket
     Given a customer with account id 10
     When the customer buys <adults> adult, <children> child and <infants> infant tickets
-    Then the purchase is rejected
+    Then the purchase is rejected with reason ADULT_REQUIRED
     And nothing is paid and no seats are reserved
 
     Examples:
@@ -70,7 +70,7 @@ Feature: Purchasing cinema tickets
   Scenario Outline: Invalid account ids are rejected
     Given a customer with account id <id>
     When the customer buys 1 adult, 0 child and 0 infant tickets
-    Then the purchase is rejected
+    Then the purchase is rejected with reason INVALID_ACCOUNT
     And nothing is paid and no seats are reserved
 
     Examples:
@@ -78,13 +78,13 @@ Feature: Purchasing cinema tickets
       | 0  |
       | -1 |
 
-  Scenario: Zero or negative quantities are rejected
+  Scenario: Zero quantities are rejected
     Given a customer with account id 10
     When the customer makes these ticket requests
       | type  | quantity |
       | ADULT | 2        |
       | CHILD | 0        |
-    Then the purchase is rejected
+    Then the purchase is rejected with reason INVALID_QUANTITY
     And nothing is paid and no seats are reserved
 
   Scenario: Negative quantities are rejected
@@ -93,7 +93,7 @@ Feature: Purchasing cinema tickets
       | type  | quantity |
       | ADULT | 5        |
       | CHILD | -5       |
-    Then the purchase is rejected
+    Then the purchase is rejected with reason INVALID_QUANTITY
     And nothing is paid and no seats are reserved
 
   Scenario: A huge quantity after a small one does not overflow the limit
@@ -102,11 +102,11 @@ Feature: Purchasing cinema tickets
       | type  | quantity   |
       | ADULT | 1          |
       | ADULT | 2147483647 |
-    Then the purchase is rejected
+    Then the purchase is rejected with reason TOO_MANY_TICKETS
     And nothing is paid and no seats are reserved
 
   Scenario: A purchase with no ticket requests is rejected
     Given a customer with account id 10
     When the customer makes no ticket requests
-    Then the purchase is rejected
+    Then the purchase is rejected with reason NO_TICKET_REQUESTS
     And nothing is paid and no seats are reserved

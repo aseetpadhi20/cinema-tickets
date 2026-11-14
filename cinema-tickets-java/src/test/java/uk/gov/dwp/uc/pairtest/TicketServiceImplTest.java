@@ -51,6 +51,8 @@ class TicketServiceImplTest {
     void nullCollaboratorsRejectedAtConstruction() {
         assertThrows(NullPointerException.class, () -> new TicketServiceImpl(null, seatReservationService));
         assertThrows(NullPointerException.class, () -> new TicketServiceImpl(paymentService, null));
+        assertThrows(NullPointerException.class,
+                () -> new TicketServiceImpl(paymentService, seatReservationService, null));
     }
 
     @Test
