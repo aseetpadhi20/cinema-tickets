@@ -123,6 +123,24 @@ class TicketServiceImplTest {
         assertInvalid(1L, req(Type.ADULT, Integer.MAX_VALUE), req(Type.ADULT, 1));
     }
 
+    @Test
+    void childOrInfantWithoutAdultRejected() {
+        assertInvalid(1L, req(Type.CHILD, 1));
+        assertInvalid(1L, req(Type.INFANT, 1));
+        assertInvalid(1L, req(Type.CHILD, 1), req(Type.INFANT, 1));
+    }
+
+    @Test
+    void moreInfantsThanAdultsRejected() {
+        assertInvalid(1L, req(Type.ADULT, 1), req(Type.INFANT, 2));
+    }
+
+    @Test
+    void equalInfantsAndAdultsIsAllowed() {
+        service.purchaseTickets(1L, req(Type.ADULT, 2), req(Type.INFANT, 2));
+        verify(paymentService).makePayment(1L, 50);
+    }
+
     @ParameterizedTest(name = "{0} adult, {1} child, {2} infant -> £{3}, {4} seats")
     @CsvSource({
             "1, 0, 0, 25, 1",
