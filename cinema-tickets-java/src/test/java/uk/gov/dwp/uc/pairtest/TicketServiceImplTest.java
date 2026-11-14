@@ -16,7 +16,11 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.gov.dwp.uc.pairtest.exception.InvalidPurchaseException;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class TicketServiceImplTest {
@@ -35,6 +39,11 @@ class TicketServiceImplTest {
 
     private static TicketTypeRequest req(Type type, int n) {
         return new TicketTypeRequest(type, n);
+    }
+
+    private void assertInvalid(Long accountId, TicketTypeRequest... requests) {
+        assertThrows(InvalidPurchaseException.class, () -> service.purchaseTickets(accountId, requests));
+        verifyNoInteractions(paymentService, seatReservationService);
     }
 
     @Test
@@ -63,6 +72,32 @@ class TicketServiceImplTest {
         service.purchaseTickets(7L, req(Type.ADULT, 1), req(Type.ADULT, 1), req(Type.CHILD, 1), req(Type.CHILD, 1));
         verify(paymentService).makePayment(7L, 80);
         verify(seatReservationService).reserveSeat(7L, 4);
+    }
+
+    @Test
+    void invalidAccountRejected() {
+        assertInvalid(null, req(Type.ADULT, 1));
+        assertInvalid(0L, req(Type.ADULT, 1));
+        assertInvalid(-1L, req(Type.ADULT, 1));
+    }
+
+    @Test
+    void emptyOrNullRequestsRejected() {
+        assertInvalid(1L);
+        assertInvalid(1L, (TicketTypeRequest[]) null);
+        assertInvalid(1L, (TicketTypeRequest) null);
+        assertInvalid(1L, new TicketTypeRequest(null, 1));
+    }
+
+    @Test
+    void zeroOrNegativeQuantityRejected() {
+        assertInvalid(1L, req(Type.ADULT, 0));
+        assertInvalid(1L, req(Type.ADULT, 1), req(Type.CHILD, -1));
+    }
+
+    @Test
+    void oneInvalidRequestRejectsWholePurchase() {
+        assertInvalid(1L, req(Type.ADULT, 2), req(Type.CHILD, 0));
     }
 
     @ParameterizedTest(name = "{0} adult, {1} child, {2} infant -> £{3}, {4} seats")
