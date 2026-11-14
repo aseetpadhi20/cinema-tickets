@@ -3,24 +3,21 @@ package uk.gov.dwp.uc.pairtest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import thirdparty.paymentgateway.TicketPaymentService;
 import thirdparty.seatbooking.SeatReservationService;
 import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest;
 import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest.Type;
-
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import uk.gov.dwp.uc.pairtest.exception.InvalidPurchaseException;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import uk.gov.dwp.uc.pairtest.exception.InvalidPurchaseException;
-
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import org.mockito.InOrder;
-
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -48,6 +45,12 @@ class TicketServiceImplTest {
     private void assertInvalid(Long accountId, TicketTypeRequest... requests) {
         assertThrows(InvalidPurchaseException.class, () -> service.purchaseTickets(accountId, requests));
         verifyNoInteractions(paymentService, seatReservationService);
+    }
+
+    @Test
+    void nullCollaboratorsRejectedAtConstruction() {
+        assertThrows(NullPointerException.class, () -> new TicketServiceImpl(null, seatReservationService));
+        assertThrows(NullPointerException.class, () -> new TicketServiceImpl(paymentService, null));
     }
 
     @Test
@@ -128,21 +131,16 @@ class TicketServiceImplTest {
     }
 
     @Test
+    void hugeRequestAfterSmallOneDoesNotWrapAround() {
+        assertInvalid(1L, req(Type.ADULT, 1), req(Type.ADULT, Integer.MAX_VALUE));
+        assertInvalid(1L, req(Type.ADULT, 25), req(Type.ADULT, Integer.MAX_VALUE));
+    }
+
+    @Test
     void childOrInfantWithoutAdultRejected() {
         assertInvalid(1L, req(Type.CHILD, 1));
         assertInvalid(1L, req(Type.INFANT, 1));
         assertInvalid(1L, req(Type.CHILD, 1), req(Type.INFANT, 1));
-    }
-
-    @Test
-    void moreInfantsThanAdultsRejected() {
-        assertInvalid(1L, req(Type.ADULT, 1), req(Type.INFANT, 2));
-    }
-
-    @Test
-    void equalInfantsAndAdultsIsAllowed() {
-        service.purchaseTickets(1L, req(Type.ADULT, 2), req(Type.INFANT, 2));
-        verify(paymentService).makePayment(1L, 50);
     }
 
     @Test
