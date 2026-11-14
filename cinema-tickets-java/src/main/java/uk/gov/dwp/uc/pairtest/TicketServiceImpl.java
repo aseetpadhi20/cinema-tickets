@@ -45,9 +45,6 @@ public class TicketServiceImpl implements TicketService {
         }
     }
 
-    /**
-     * Validates each request and totals the tickets per type (indexed by {@link Type#ordinal()}).
-     */
     private int[] countTickets(TicketTypeRequest[] requests) {
         if (requests == null || requests.length == 0) {
             throw new InvalidPurchaseException("At least one ticket request is required");
@@ -62,8 +59,6 @@ public class TicketServiceImpl implements TicketService {
             if (noOfTickets <= 0) {
                 throw new InvalidPurchaseException("Number of tickets must be greater than zero");
             }
-            // total is never above the maximum here, so this comparison cannot overflow,
-            // unlike checking (total + noOfTickets) after the addition.
             if (noOfTickets > MAX_TICKETS_PER_PURCHASE - total) {
                 throw new InvalidPurchaseException(TOO_MANY_TICKETS_MESSAGE);
             }

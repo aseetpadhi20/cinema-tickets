@@ -19,10 +19,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-/**
- * End-to-end checks against the real third-party implementations. The detailed rule matrix
- * lives in {@link TicketServiceImplTest}; these tests only prove the pieces work together.
- */
 class TicketServiceIntegrationTest {
 
     private TicketPaymentService paymentService;
