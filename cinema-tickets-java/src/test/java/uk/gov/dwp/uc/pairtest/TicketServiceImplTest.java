@@ -100,6 +100,29 @@ class TicketServiceImplTest {
         assertInvalid(1L, req(Type.ADULT, 2), req(Type.CHILD, 0));
     }
 
+    @Test
+    void exactlyMaximumTicketsIsAllowed() {
+        service.purchaseTickets(1L, req(Type.ADULT, 20), req(Type.CHILD, 5));
+        verify(paymentService).makePayment(1L, 575);
+        verify(seatReservationService).reserveSeat(1L, 25);
+    }
+
+    @Test
+    void moreThanMaximumTicketsRejected() {
+        assertInvalid(1L, req(Type.ADULT, 26));
+        assertInvalid(1L, req(Type.ADULT, 20), req(Type.CHILD, 3), req(Type.INFANT, 3));
+    }
+
+    @Test
+    void maximumLimitAppliesAcrossSeparateRequests() {
+        assertInvalid(1L, req(Type.ADULT, 13), req(Type.ADULT, 13));
+    }
+
+    @Test
+    void overflowingCountsRejected() {
+        assertInvalid(1L, req(Type.ADULT, Integer.MAX_VALUE), req(Type.ADULT, 1));
+    }
+
     @ParameterizedTest(name = "{0} adult, {1} child, {2} infant -> £{3}, {4} seats")
     @CsvSource({
             "1, 0, 0, 25, 1",
