@@ -11,6 +11,8 @@ public class TicketServiceImpl implements TicketService {
      * Should only have private methods other than the one below.
      */
 
+    static final int MAX_TICKETS_PER_PURCHASE = 25;
+
     private final TicketPaymentService paymentService;
     private final SeatReservationService seatReservationService;
 
@@ -23,6 +25,7 @@ public class TicketServiceImpl implements TicketService {
     public void purchaseTickets(Long accountId, TicketTypeRequest... ticketTypeRequests) throws InvalidPurchaseException {
         validateAccount(accountId);
         int[] counts = countTickets(ticketTypeRequests);
+        validatePurchase(counts);
 
         int amount = 0;
         int seats = 0;
@@ -57,8 +60,22 @@ public class TicketServiceImpl implements TicketService {
                 throw new InvalidPurchaseException("Number of tickets must be greater than zero");
             }
             counts[request.getTicketType().ordinal()] += request.getNoOfTickets();
+            // Guard against int overflow before the total check
+            if (counts[request.getTicketType().ordinal()] > MAX_TICKETS_PER_PURCHASE) {
+                throw new InvalidPurchaseException("Cannot purchase more than " + MAX_TICKETS_PER_PURCHASE + " tickets at a time");
+            }
         }
         return counts;
+    }
+
+    private void validatePurchase(int[] counts) {
+        int total = 0;
+        for (int count : counts) {
+            total += count;
+        }
+        if (total > MAX_TICKETS_PER_PURCHASE) {
+            throw new InvalidPurchaseException("Cannot purchase more than " + MAX_TICKETS_PER_PURCHASE + " tickets at a time");
+        }
     }
 
 }
