@@ -76,6 +76,12 @@ public class TicketServiceImpl implements TicketService {
         if (total > MAX_TICKETS_PER_PURCHASE) {
             throw new InvalidPurchaseException("Cannot purchase more than " + MAX_TICKETS_PER_PURCHASE + " tickets at a time");
         }
+        if (counts[Type.ADULT.ordinal()] == 0) {
+            throw new InvalidPurchaseException("Child and infant tickets require at least one adult ticket");
+        }
+        if (counts[Type.INFANT.ordinal()] > counts[Type.ADULT.ordinal()]) {
+            throw new InvalidPurchaseException("Each infant must sit on an adult's lap: infants cannot outnumber adults");
+        }
     }
 
 }
